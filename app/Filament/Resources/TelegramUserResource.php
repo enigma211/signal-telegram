@@ -144,16 +144,15 @@ class TelegramUserResource extends Resource
                     }),
                 Tables\Columns\TextColumn::make('vip_expires_at')
                     ->label('انقضای VIP')
-                    ->dateTime('Y-m-d H:i')
-                    ->sortable()
-                    ->placeholder('—'),
+                    ->jalaliDateTime()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('referral_code')
                     ->label('کد معرف')
                     ->searchable()
                     ->copyable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('عضویت')
-                    ->dateTime('Y-m-d')
+                    ->jalaliDate()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])

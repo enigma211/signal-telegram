@@ -72,7 +72,7 @@ class SignalUpdateResource extends Resource
                     ->wrap(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('زمان')
-                    ->dateTime('Y-m-d H:i')
+                    ->jalaliDateTime()
                     ->sortable(),
             ])
             ->actions([

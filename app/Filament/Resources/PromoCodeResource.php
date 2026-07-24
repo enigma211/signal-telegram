@@ -76,7 +76,7 @@ class PromoCodeResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('expires_at')
                     ->label('انقضا')
-                    ->dateTime('Y-m-d H:i')
+                    ->jalaliDateTime()
                     ->placeholder('بدون محدودیت'),
                 Tables\Columns\TextColumn::make('current_uses')
                     ->label('استفاده')
@@ -87,7 +87,7 @@ class PromoCodeResource extends Resource
                     ->getStateUsing(fn (PromoCode $record): bool => $record->isValid()),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('ایجاد')
-                    ->dateTime('Y-m-d')
+                    ->jalaliDate()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->actions([

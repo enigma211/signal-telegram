@@ -18,7 +18,7 @@ class MessagesRelationManager extends RelationManager
             ->columns([
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('زمان')
-                    ->dateTime('Y-m-d H:i')
+                    ->jalaliDateTime()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('sender')
                     ->label('فرستنده')

@@ -67,7 +67,7 @@ class TelegramBotResource extends Resource
                     Forms\Components\Placeholder::make('webhook_info')
                         ->label('وضعیت Webhook')
                         ->content(fn (?TelegramBot $record): string => $record?->webhook_set_at
-                            ? 'آخرین تنظیم: '.$record->webhook_set_at->format('Y-m-d H:i').' (نیاز به TELEGRAM_WEBHOOK_SECRET)'
+                            ? 'آخرین تنظیم: '.jalali($record->webhook_set_at).' (نیاز به TELEGRAM_WEBHOOK_SECRET)'
                             : 'هنوز تنظیم نشده — ابتدا TELEGRAM_WEBHOOK_SECRET را در .env بگذارید.'),
                 ])->columns(2),
             ]);
@@ -101,11 +101,11 @@ class TelegramBotResource extends Resource
                     ->label('کانال‌ها'),
                 Tables\Columns\TextColumn::make('webhook_set_at')
                     ->label('Webhook')
-                    ->dateTime('Y-m-d H:i')
+                    ->jalaliDateTime()
                     ->placeholder('تنظیم نشده'),
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('بروزرسانی')
-                    ->dateTime('Y-m-d H:i')
+                    ->jalaliDateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])

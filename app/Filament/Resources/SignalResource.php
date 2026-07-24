@@ -145,7 +145,7 @@ class SignalResource extends Resource
                     ->label('آپدیت‌ها'),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('ایجاد')
-                    ->dateTime('Y-m-d H:i')
+                    ->jalaliDateTime()
                     ->sortable(),
             ])
             ->filters([

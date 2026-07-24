@@ -168,12 +168,12 @@ class TransactionResource extends Resource
                     ->formatStateUsing(fn (TransactionType $state): string => $state->label()),
                 Tables\Columns\TextColumn::make('chain_verified_at')
                     ->label('زنجیره')
-                    ->dateTime('Y-m-d H:i')
+                    ->jalaliDateTime()
                     ->placeholder('—')
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('تاریخ')
-                    ->dateTime('Y-m-d H:i')
+                    ->jalaliDateTime()
                     ->sortable(),
             ])
             ->filters([

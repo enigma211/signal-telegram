@@ -246,7 +246,11 @@ class VipSubscriptionService
         foreach ($users as $user) {
             try {
                 $telegram = app(TelegramService::class)->forUser($user);
-                $expiry = $user->vip_expires_at?->format('Y-m-d H:i');
+                $expiry = $user->vip_expires_at
+                    ? ($user->bot_language === BotLanguage::Fa
+                        ? jalali($user->vip_expires_at, 'Y/m/d H:i')
+                        : $user->vip_expires_at->format('Y-m-d H:i'))
+                    : null;
                 $text = app(BotCopy::class)->get(
                     'vip_expiry_reminder',
                     $user,
@@ -313,7 +317,11 @@ class VipSubscriptionService
         $tier = $user->subscription_tier->label();
         $active = $user->isVipActive();
         $fa = $user->bot_language === BotLanguage::Fa;
-        $expiry = $user->vip_expires_at?->format('Y-m-d H:i') ?? ($fa ? 'نامحدود' : 'Unlimited');
+        $expiry = $user->vip_expires_at
+            ? ($fa
+                ? jalali($user->vip_expires_at, 'Y/m/d H:i')
+                : $user->vip_expires_at->format('Y-m-d H:i'))
+            : ($fa ? 'نامحدود' : 'Unlimited');
         $state = $active
             ? ($fa ? 'فعال ✅' : 'Active ✅')
             : ($fa ? 'غیرفعال ❌' : 'Inactive ❌');

@@ -84,7 +84,7 @@ class MessageTemplateResource extends Resource
                     ->wrap(),
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('آخرین ویرایش')
-                    ->dateTime('Y-m-d H:i')
+                    ->jalaliDateTime()
                     ->sortable(),
             ])
             ->actions([

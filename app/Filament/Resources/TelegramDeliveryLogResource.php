@@ -101,7 +101,7 @@ class TelegramDeliveryLogResource extends Resource
                 Tables\Columns\TextColumn::make('attempts')->label('تلاش')->sortable(),
                 Tables\Columns\TextColumn::make('last_attempted_at')
                     ->label('آخرین تلاش')
-                    ->dateTime('Y-m-d H:i')
+                    ->jalaliDateTime()
                     ->sortable(),
             ])
             ->defaultSort('id', 'desc')

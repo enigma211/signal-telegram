@@ -120,7 +120,7 @@ class SupportTicketResource extends Resource
                     ->label('پیام‌ها'),
                 Tables\Columns\TextColumn::make('last_message_at')
                     ->label('آخرین پیام')
-                    ->dateTime('Y-m-d H:i')
+                    ->jalaliDateTime()
                     ->sortable(),
             ])
             ->defaultSort('last_message_at', 'desc')
