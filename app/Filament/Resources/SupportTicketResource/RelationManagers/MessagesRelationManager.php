@@ -24,17 +24,21 @@ class MessagesRelationManager extends RelationManager
                     ->label('فرستنده')
                     ->badge()
                     ->formatStateUsing(fn (string $state): string => $state === 'admin' ? 'ادمین' : 'کاربر')
-                    ->color(fn (string $state): string => $state === 'admin' ? 'success' : 'info'),
+                    ->color(fn (string $state): string => $state === 'admin' ? 'success' : 'warning'),
                 Tables\Columns\TextColumn::make('admin.name')
                     ->label('ادمین')
-                    ->placeholder('—'),
+                    ->placeholder('—')
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('body')
                     ->label('متن')
                     ->wrap()
+                    ->html()
+                    ->formatStateUsing(fn (?string $state): string => nl2br(e($state ?? '')))
                     ->searchable(),
             ])
             ->defaultSort('id')
             ->paginated(false)
+            ->striped()
             ->headerActions([])
             ->actions([])
             ->bulkActions([]);
