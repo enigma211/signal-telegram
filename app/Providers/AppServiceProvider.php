@@ -28,6 +28,15 @@ class AppServiceProvider extends ServiceProvider
                     :root { --font-family: 'Vazirmatn', ui-sans-serif, system-ui, sans-serif; }
                     html { direction: rtl; }
                     body { font-family: 'Vazirmatn', ui-sans-serif, system-ui, sans-serif; }
+
+                    /* دکمه جمع/باز کردن سایدبار در RTL همیشه دیده شود */
+                    .fi-sidebar-close-overlay,
+                    .fi-topbar .fi-topbar-open-sidebar-btn,
+                    .fi-topbar .fi-topbar-close-sidebar-btn,
+                    .fi-topbar button[aria-label],
+                    .fi-sidebar-header button {
+                        display: inline-flex !important;
+                    }
                 </style>
                 <script>document.documentElement.setAttribute('dir', 'rtl'); document.documentElement.setAttribute('lang', 'fa');</script>
             HTML

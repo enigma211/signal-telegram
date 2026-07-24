@@ -90,15 +90,15 @@ class TelegramUserResource extends Resource
                     Forms\Components\TextInput::make('crypto_wallet_address')
                         ->label('آدرس کیف پول')
                         ->maxLength(255),
-                    Forms\Components\Toggle::make('is_blocked')
-                        ->label('مسدود')
-                        ->helperText('اگر فعال باشد، کاربر نمی‌تواند از ربات فارسی یا انگلیسی استفاده کند و سیگنال دریافت نمی‌کند.')
-                        ->inline(false),
-                    Forms\Components\Textarea::make('blocked_reason')
+                    Forms\Components\Placeholder::make('access_status')
+                        ->label('وضعیت دسترسی')
+                        ->content(fn (?TelegramUser $record): string => $record?->is_blocked ? 'مسدود' : 'فعال'),
+                    Forms\Components\Placeholder::make('blocked_reason_display')
                         ->label('دلیل مسدودی')
-                        ->rows(2)
-                        ->columnSpanFull()
-                        ->visible(fn (Forms\Get $get): bool => (bool) $get('is_blocked')),
+                        ->content(fn (?TelegramUser $record): string => filled($record?->blocked_reason)
+                            ? (string) $record->blocked_reason
+                            : '—')
+                        ->visible(fn (?TelegramUser $record): bool => (bool) $record?->is_blocked),
                     Forms\Components\Placeholder::make('blocked_at_display')
                         ->label('زمان مسدودی')
                         ->content(fn (?TelegramUser $record): string => $record?->blocked_at
@@ -166,14 +166,11 @@ class TelegramUserResource extends Resource
                     ->label('کد معرف')
                     ->searchable()
                     ->copyable(),
-                Tables\Columns\IconColumn::make('is_blocked')
-                    ->label('مسدود')
-                    ->boolean()
-                    ->trueIcon('heroicon-o-no-symbol')
-                    ->falseIcon('heroicon-o-check-circle')
-                    ->trueColor('danger')
-                    ->falseColor('success')
-                    ->sortable(),
+                Tables\Columns\TextColumn::make('access_status')
+                    ->label('وضعیت')
+                    ->badge()
+                    ->state(fn (TelegramUser $record): string => $record->is_blocked ? 'مسدود' : 'فعال')
+                    ->color(fn (TelegramUser $record): string => $record->is_blocked ? 'danger' : 'success'),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('عضویت')
                     ->jalaliDate()
@@ -192,47 +189,12 @@ class TelegramUserResource extends Resource
                         fn (SubscriptionTier $case) => [$case->value => $case->label()]
                     )),
                 Tables\Filters\TernaryFilter::make('is_blocked')
-                    ->label('وضعیت مسدودی')
-                    ->trueLabel('فقط مسدودها')
-                    ->falseLabel('فقط آزادها')
+                    ->label('وضعیت دسترسی')
+                    ->trueLabel('فقط مسدود')
+                    ->falseLabel('فقط فعال')
                     ->placeholder('همه'),
             ])
             ->actions([
-                Tables\Actions\Action::make('block')
-                    ->label('مسدود کردن')
-                    ->icon('heroicon-o-no-symbol')
-                    ->color('danger')
-                    ->visible(fn (TelegramUser $record): bool => ! $record->is_blocked)
-                    ->requiresConfirmation()
-                    ->modalHeading('مسدود کردن کاربر')
-                    ->modalDescription('کاربر دیگر نمی‌تواند از ربات فارسی یا انگلیسی استفاده کند.')
-                    ->form([
-                        Forms\Components\Textarea::make('blocked_reason')
-                            ->label('دلیل (اختیاری)')
-                            ->rows(2),
-                    ])
-                    ->action(function (TelegramUser $record, array $data): void {
-                        $record->block($data['blocked_reason'] ?? null);
-
-                        \Filament\Notifications\Notification::make()
-                            ->title('کاربر مسدود شد')
-                            ->success()
-                            ->send();
-                    }),
-                Tables\Actions\Action::make('unblock')
-                    ->label('رفع مسدودی')
-                    ->icon('heroicon-o-lock-open')
-                    ->color('success')
-                    ->visible(fn (TelegramUser $record): bool => $record->is_blocked)
-                    ->requiresConfirmation()
-                    ->action(function (TelegramUser $record): void {
-                        $record->unblock();
-
-                        \Filament\Notifications\Notification::make()
-                            ->title('مسدودی برداشته شد')
-                            ->success()
-                            ->send();
-                    }),
                 Tables\Actions\Action::make('grantVip')
                     ->label('فعال‌سازی / تغییر پلن VIP')
                     ->icon('heroicon-o-star')
@@ -296,6 +258,7 @@ class TelegramUserResource extends Resource
                         ->icon('heroicon-o-no-symbol')
                         ->color('danger')
                         ->requiresConfirmation()
+                        ->deselectRecordsAfterCompletion()
                         ->action(function ($records): void {
                             foreach ($records as $record) {
                                 if (! $record->is_blocked) {
@@ -313,6 +276,7 @@ class TelegramUserResource extends Resource
                         ->icon('heroicon-o-lock-open')
                         ->color('success')
                         ->requiresConfirmation()
+                        ->deselectRecordsAfterCompletion()
                         ->action(function ($records): void {
                             foreach ($records as $record) {
                                 if ($record->is_blocked) {
