@@ -32,6 +32,7 @@ class BroadcastSignalJob implements ShouldQueue
 
         BroadcastSignalLanguageJob::dispatch($signal, 'fa');
         BroadcastSignalLanguageJob::dispatch($signal, 'en');
+        PostSignalToTwitterJob::dispatch($signal);
 
         $signal->markAsBroadcasted();
     }

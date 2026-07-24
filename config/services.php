@@ -56,4 +56,20 @@ return [
         'amount_tolerance' => (float) env('TX_AMOUNT_TOLERANCE', 0.01),
     ],
 
+    // X (Twitter) — auto-post English signal / result copy for ads
+    // Create app at https://developer.x.com — needs Read+Write + Access Token
+    'twitter' => [
+        'enabled' => (bool) env('TWITTER_ENABLED', false),
+        'api_key' => env('TWITTER_API_KEY'),
+        'api_secret' => env('TWITTER_API_SECRET'),
+        'access_token' => env('TWITTER_ACCESS_TOKEN'),
+        'access_token_secret' => env('TWITTER_ACCESS_TOKEN_SECRET'),
+        'post_signals' => (bool) env('TWITTER_POST_SIGNALS', true),
+        'post_results' => (bool) env('TWITTER_POST_RESULTS', true),
+        // false = only target_audience=all (recommended for public ads)
+        'post_vip' => (bool) env('TWITTER_POST_VIP', false),
+        // Optional CTA footer; default builds from TELEGRAM_BOT_USERNAME_EN
+        'cta' => env('TWITTER_CTA', ''),
+    ],
+
 ];

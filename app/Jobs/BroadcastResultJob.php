@@ -32,5 +32,6 @@ class BroadcastResultJob implements ShouldQueue
 
         BroadcastResultLanguageJob::dispatch($signal, 'fa');
         BroadcastResultLanguageJob::dispatch($signal, 'en');
+        PostResultToTwitterJob::dispatch($signal);
     }
 }
