@@ -252,4 +252,47 @@ class TelegramWebhookTest extends TestCase
 
         Http::assertNotSent(fn ($request) => str_contains($request->url(), 'FA-TEST-TOKEN/sendMessage'));
     }
+
+    public function test_blocked_user_cannot_use_bot(): void
+    {
+        TelegramUser::query()->create([
+            'telegram_id' => '888777666',
+            'bot_language' => BotLanguage::Fa,
+            'subscription_tier' => SubscriptionTier::Free,
+            'referral_code' => 'BLOCKED1',
+            'is_blocked' => true,
+            'blocked_at' => now(),
+        ]);
+
+        $payload = [
+            'message' => [
+                'message_id' => 99,
+                'from' => ['id' => 888777666, 'is_bot' => false, 'first_name' => 'Blocked'],
+                'chat' => ['id' => 888777666, 'type' => 'private'],
+                'text' => '/start',
+            ],
+        ];
+
+        $this->postJson('/api/telegram/webhook/fa', $payload, $this->webhookHeaders())->assertOk();
+
+        Http::assertSent(function ($request) {
+            if (! str_contains($request->url(), 'FA-TEST-TOKEN/sendMessage')) {
+                return false;
+            }
+
+            $text = (string) ($request->data()['text'] ?? '');
+
+            return str_contains($text, 'مسدود');
+        });
+
+        Http::assertNotSent(function ($request) {
+            if (! str_contains($request->url(), 'FA-TEST-TOKEN/sendMessage')) {
+                return false;
+            }
+
+            $text = (string) ($request->data()['text'] ?? '');
+
+            return str_contains($text, 'نُوا سیگنال') || str_contains($text, 'خوش آمدید');
+        });
+    }
 }

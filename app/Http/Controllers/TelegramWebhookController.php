@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\BotLanguage;
+use App\Models\TelegramUser;
 use App\Services\TelegramService;
 use App\Services\VipBotHandler;
 use Illuminate\Http\JsonResponse;
@@ -65,6 +66,10 @@ class TelegramWebhookController extends Controller
             $referralCode = isset($parts[1]) ? trim($parts[1]) : null;
             $user = $telegram->registerSilently($telegramId, $botLanguage, $referralCode, $profile);
 
+            if ($this->rejectIfBlocked($user, (string) $chatId, $telegram)) {
+                return;
+            }
+
             $telegram->sendMessage(
                 (string) $chatId,
                 $telegram->welcomeText($user),
@@ -75,6 +80,11 @@ class TelegramWebhookController extends Controller
         }
 
         $user = $telegram->registerSilently($telegramId, $botLanguage, null, $profile);
+
+        if ($this->rejectIfBlocked($user, (string) $chatId, $telegram)) {
+            return;
+        }
+
         $this->vipBot->handleText($user, (string) $chatId, $text);
     }
 
@@ -92,7 +102,21 @@ class TelegramWebhookController extends Controller
             return;
         }
 
-        $user = $this->telegram->forLanguage($botLanguage)->registerSilently($telegramId, $botLanguage, null, $profile);
+        $telegram = $this->telegram->forLanguage($botLanguage);
+        $user = $telegram->registerSilently($telegramId, $botLanguage, null, $profile);
+
+        if ($user->isBlocked()) {
+            $telegram->answerCallbackQuery($callbackId, $telegram->blockedText($user), true);
+            $telegram->respond(
+                (string) $chatId,
+                $telegram->blockedText($user),
+                ['inline_keyboard' => []],
+                $messageId !== null ? (int) $messageId : null
+            );
+
+            return;
+        }
+
         $this->vipBot->handleCallback(
             $user,
             (string) $chatId,
@@ -100,6 +124,17 @@ class TelegramWebhookController extends Controller
             $data,
             $messageId !== null ? (int) $messageId : null
         );
+    }
+
+    protected function rejectIfBlocked(TelegramUser $user, string $chatId, TelegramService $telegram): bool
+    {
+        if (! $user->isBlocked()) {
+            return false;
+        }
+
+        $telegram->sendMessage($chatId, $telegram->blockedText($user));
+
+        return true;
     }
 
     /**

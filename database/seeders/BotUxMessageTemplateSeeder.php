@@ -18,6 +18,13 @@ class BotUxMessageTemplateSeeder extends Seeder
                 'body_en' => "Welcome to Nova Signal 👋\n\nWe analyze Forex and Crypto markets with AI and send free signals to you every hour.\n\nChoose an option from the menu below.\nWith a VIP membership, you get access to more signals.",
             ],
             [
+                'key' => 'user_blocked',
+                'name' => 'کاربر مسدود شده',
+                'placeholders_help' => '',
+                'body_fa' => '⛔ دسترسی شما به این ربات مسدود شده است.',
+                'body_en' => '⛔ Your access to this bot has been blocked.',
+            ],
+            [
                 'key' => 'status',
                 'name' => 'وضعیت اشتراک',
                 'placeholders_help' => '{tier} {state} {expiry} {referral_code}',

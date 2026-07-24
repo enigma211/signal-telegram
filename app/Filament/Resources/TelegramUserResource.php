@@ -90,6 +90,21 @@ class TelegramUserResource extends Resource
                     Forms\Components\TextInput::make('crypto_wallet_address')
                         ->label('آدرس کیف پول')
                         ->maxLength(255),
+                    Forms\Components\Toggle::make('is_blocked')
+                        ->label('مسدود')
+                        ->helperText('اگر فعال باشد، کاربر نمی‌تواند از ربات فارسی یا انگلیسی استفاده کند و سیگنال دریافت نمی‌کند.')
+                        ->inline(false),
+                    Forms\Components\Textarea::make('blocked_reason')
+                        ->label('دلیل مسدودی')
+                        ->rows(2)
+                        ->columnSpanFull()
+                        ->visible(fn (Forms\Get $get): bool => (bool) $get('is_blocked')),
+                    Forms\Components\Placeholder::make('blocked_at_display')
+                        ->label('زمان مسدودی')
+                        ->content(fn (?TelegramUser $record): string => $record?->blocked_at
+                            ? jalali($record->blocked_at)
+                            : '—')
+                        ->visible(fn (?TelegramUser $record): bool => (bool) $record?->is_blocked),
                 ])->columns(2),
             ]);
     }
@@ -151,6 +166,14 @@ class TelegramUserResource extends Resource
                     ->label('کد معرف')
                     ->searchable()
                     ->copyable(),
+                Tables\Columns\IconColumn::make('is_blocked')
+                    ->label('مسدود')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-no-symbol')
+                    ->falseIcon('heroicon-o-check-circle')
+                    ->trueColor('danger')
+                    ->falseColor('success')
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('عضویت')
                     ->jalaliDate()
@@ -168,12 +191,53 @@ class TelegramUserResource extends Resource
                     ->options(collect(SubscriptionTier::cases())->mapWithKeys(
                         fn (SubscriptionTier $case) => [$case->value => $case->label()]
                     )),
+                Tables\Filters\TernaryFilter::make('is_blocked')
+                    ->label('وضعیت مسدودی')
+                    ->trueLabel('فقط مسدودها')
+                    ->falseLabel('فقط آزادها')
+                    ->placeholder('همه'),
             ])
             ->actions([
+                Tables\Actions\Action::make('block')
+                    ->label('مسدود کردن')
+                    ->icon('heroicon-o-no-symbol')
+                    ->color('danger')
+                    ->visible(fn (TelegramUser $record): bool => ! $record->is_blocked)
+                    ->requiresConfirmation()
+                    ->modalHeading('مسدود کردن کاربر')
+                    ->modalDescription('کاربر دیگر نمی‌تواند از ربات فارسی یا انگلیسی استفاده کند.')
+                    ->form([
+                        Forms\Components\Textarea::make('blocked_reason')
+                            ->label('دلیل (اختیاری)')
+                            ->rows(2),
+                    ])
+                    ->action(function (TelegramUser $record, array $data): void {
+                        $record->block($data['blocked_reason'] ?? null);
+
+                        \Filament\Notifications\Notification::make()
+                            ->title('کاربر مسدود شد')
+                            ->success()
+                            ->send();
+                    }),
+                Tables\Actions\Action::make('unblock')
+                    ->label('رفع مسدودی')
+                    ->icon('heroicon-o-lock-open')
+                    ->color('success')
+                    ->visible(fn (TelegramUser $record): bool => $record->is_blocked)
+                    ->requiresConfirmation()
+                    ->action(function (TelegramUser $record): void {
+                        $record->unblock();
+
+                        \Filament\Notifications\Notification::make()
+                            ->title('مسدودی برداشته شد')
+                            ->success()
+                            ->send();
+                    }),
                 Tables\Actions\Action::make('grantVip')
                     ->label('فعال‌سازی / تغییر پلن VIP')
                     ->icon('heroicon-o-star')
                     ->color('success')
+                    ->visible(fn (TelegramUser $record): bool => ! $record->is_blocked)
                     ->form([
                         Forms\Components\Select::make('subscription_tier')
                             ->label('پلن')
@@ -203,7 +267,7 @@ class TelegramUserResource extends Resource
                     ->label('تمدید VIP')
                     ->icon('heroicon-o-arrow-path')
                     ->color('warning')
-                    ->visible(fn (TelegramUser $record): bool => $record->subscription_tier->isVip())
+                    ->visible(fn (TelegramUser $record): bool => ! $record->is_blocked && $record->subscription_tier->isVip())
                     ->form([
                         Forms\Components\TextInput::make('days')
                             ->label('روزهای تمدید')
@@ -227,6 +291,40 @@ class TelegramUserResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\BulkAction::make('blockSelected')
+                        ->label('مسدود کردن انتخاب‌شده‌ها')
+                        ->icon('heroicon-o-no-symbol')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->action(function ($records): void {
+                            foreach ($records as $record) {
+                                if (! $record->is_blocked) {
+                                    $record->block('مسدودسازی گروهی از پنل');
+                                }
+                            }
+
+                            \Filament\Notifications\Notification::make()
+                                ->title('کاربران انتخاب‌شده مسدود شدند')
+                                ->success()
+                                ->send();
+                        }),
+                    Tables\Actions\BulkAction::make('unblockSelected')
+                        ->label('رفع مسدودی انتخاب‌شده‌ها')
+                        ->icon('heroicon-o-lock-open')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->action(function ($records): void {
+                            foreach ($records as $record) {
+                                if ($record->is_blocked) {
+                                    $record->unblock();
+                                }
+                            }
+
+                            \Filament\Notifications\Notification::make()
+                                ->title('مسدودی کاربران برداشته شد')
+                                ->success()
+                                ->send();
+                        }),
                     Tables\Actions\DeleteBulkAction::make()->label('حذف'),
                 ]),
             ])

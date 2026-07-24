@@ -169,6 +169,17 @@ class TelegramService
         );
     }
 
+    public function blockedText(TelegramUser|BotLanguage $userOrLang): string
+    {
+        return app(BotCopy::class)->get(
+            'user_blocked',
+            $userOrLang,
+            [],
+            '⛔ دسترسی شما به این ربات مسدود شده است.',
+            '⛔ Your access to this bot has been blocked.'
+        );
+    }
+
     public function mainKeyboard(TelegramUser $user): array
     {
         return app(VipBotHandler::class)->menuKeyboard($user);

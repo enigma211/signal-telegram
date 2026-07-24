@@ -30,6 +30,9 @@ class TelegramUser extends Model
         'crypto_wallet_address',
         'bot_state',
         'bot_state_payload',
+        'is_blocked',
+        'blocked_at',
+        'blocked_reason',
     ];
 
     protected function casts(): array
@@ -40,6 +43,8 @@ class TelegramUser extends Model
             'vip_expires_at' => 'datetime',
             'vip_expiry_reminded_at' => 'datetime',
             'bot_state_payload' => 'array',
+            'is_blocked' => 'boolean',
+            'blocked_at' => 'datetime',
         ];
     }
 
@@ -115,8 +120,37 @@ class TelegramUser extends Model
         return $this->vip_expires_at === null || $this->vip_expires_at->isFuture();
     }
 
+    public function isBlocked(): bool
+    {
+        return (bool) $this->is_blocked;
+    }
+
+    public function block(?string $reason = null): void
+    {
+        $this->update([
+            'is_blocked' => true,
+            'blocked_at' => now(),
+            'blocked_reason' => filled($reason) ? trim($reason) : $this->blocked_reason,
+            'bot_state' => null,
+            'bot_state_payload' => null,
+        ]);
+    }
+
+    public function unblock(): void
+    {
+        $this->update([
+            'is_blocked' => false,
+            'blocked_at' => null,
+            'blocked_reason' => null,
+        ]);
+    }
+
     public function canReceiveMarket(MarketType $market): bool
     {
+        if ($this->isBlocked()) {
+            return false;
+        }
+
         if (! $this->isVipActive()) {
             return false;
         }
@@ -125,6 +159,16 @@ class TelegramUser extends Model
             MarketType::Forex => $this->subscription_tier->hasForexAccess(),
             MarketType::Crypto => $this->subscription_tier->hasCryptoAccess(),
         };
+    }
+
+    public function scopeNotBlocked(Builder $query): Builder
+    {
+        return $query->where('is_blocked', false);
+    }
+
+    public function scopeBlocked(Builder $query): Builder
+    {
+        return $query->where('is_blocked', true);
     }
 
     public function scopeLanguage(Builder $query, BotLanguage|string $language): Builder
@@ -137,6 +181,7 @@ class TelegramUser extends Model
     public function scopeActiveVip(Builder $query): Builder
     {
         return $query
+            ->notBlocked()
             ->where('subscription_tier', '!=', SubscriptionTier::Free->value)
             ->where(function (Builder $q): void {
                 $q->whereNull('vip_expires_at')
@@ -158,6 +203,7 @@ class TelegramUser extends Model
         };
 
         return $query
+            ->notBlocked()
             ->whereIn('subscription_tier', $tiers)
             ->where(function (Builder $q): void {
                 $q->whereNull('vip_expires_at')

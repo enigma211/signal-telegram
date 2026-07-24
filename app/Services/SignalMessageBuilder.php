@@ -101,7 +101,7 @@ class SignalMessageBuilder
     {
         // all = free + VIP (promo/public signals)
         // vip_only = paid VIP users for that market
-        $query = TelegramUser::query();
+        $query = TelegramUser::query()->notBlocked();
 
         if ($signal->target_audience === TargetAudience::VipOnly) {
             $query->eligibleForMarket($signal->market_type);

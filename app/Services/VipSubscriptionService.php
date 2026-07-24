@@ -235,6 +235,7 @@ class VipSubscriptionService
         $days = max(1, (int) $this->settings()->vip_reminder_days);
 
         $users = TelegramUser::query()
+            ->notBlocked()
             ->where('subscription_tier', '!=', SubscriptionTier::Free->value)
             ->whereNotNull('vip_expires_at')
             ->whereBetween('vip_expires_at', [now(), now()->addDays($days)->endOfDay()])
@@ -273,6 +274,7 @@ class VipSubscriptionService
     public function expireOverdueSubscriptions(bool $notify = true): int
     {
         $users = TelegramUser::query()
+            ->notBlocked()
             ->where('subscription_tier', '!=', SubscriptionTier::Free->value)
             ->whereNotNull('vip_expires_at')
             ->where('vip_expires_at', '<=', now())
