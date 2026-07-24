@@ -179,7 +179,7 @@ class TelegramWebhookTest extends TestCase
             $body = $request->data();
             $text = (string) ($body['text'] ?? '');
 
-            return str_contains($text, 'نوا سیگنال') || str_contains($text, 'خوش آمدید');
+            return str_contains($text, 'نُوا سیگنال') || str_contains($text, 'خوش آمدید');
         });
     }
 

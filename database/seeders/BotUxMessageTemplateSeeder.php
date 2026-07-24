@@ -13,9 +13,9 @@ class BotUxMessageTemplateSeeder extends Seeder
             [
                 'key' => 'welcome',
                 'name' => 'خوش‌آمدگویی / داشبورد',
-                'placeholders_help' => '{status}',
-                'body_fa' => "به *نوا سیگنال* خوش آمدید 👋\n\nما با کمک هوش مصنوعی، بازارهای فارکس و ارز دیجیتال را تحلیل می‌کنیم و هر ساعت سیگنال‌های رایگان را برای شما ارسال می‌کنیم.\n\n{status}\n\nاز منوی زیر گزینه موردنظرتان را انتخاب کنید.\nبا VIP به سیگنال‌های بیشتر و کامل دسترسی دارید.",
-                'body_en' => "Welcome to *Nova Signal* 👋\n\nWe analyze Forex and Crypto markets with AI and send free signals to you every hour.\n\n{status}\n\nChoose an option from the menu below.\nVIP unlocks more signals and full access.",
+                'placeholders_help' => '',
+                'body_fa' => "به «نُوا سیگنال» خوش آمدید 👋\n\nما با کمک هوش مصنوعی، بازارهای فارکس و ارز دیجیتال را تحلیل می‌کنیم و هر ساعت سیگنال‌های رایگان را برای شما ارسال می‌کنیم.\n\nاز منوی زیر گزینه موردنظرتان را انتخاب کنید.\nبا عضویت VIP به سیگنال‌های بیشتری دسترسی دارید.",
+                'body_en' => "Welcome to Nova Signal 👋\n\nWe analyze Forex and Crypto markets with AI and send free signals to you every hour.\n\nChoose an option from the menu below.\nWith a VIP membership, you get access to more signals.",
             ],
             [
                 'key' => 'status',

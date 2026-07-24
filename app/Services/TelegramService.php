@@ -160,14 +160,12 @@ class TelegramService
 
     public function welcomeText(TelegramUser $user): string
     {
-        $status = app(VipSubscriptionService::class)->statusText($user);
-
         return app(BotCopy::class)->get(
             'welcome',
             $user,
-            ['status' => $status],
-            "به *نوا سیگنال* خوش آمدید 👋\n\nما با کمک هوش مصنوعی، بازارهای فارکس و ارز دیجیتال را تحلیل می‌کنیم و هر ساعت سیگنال‌های رایگان را برای شما ارسال می‌کنیم.\n\n{$status}\n\nاز منوی زیر گزینه موردنظرتان را انتخاب کنید.\nبا VIP به سیگنال‌های بیشتر و کامل دسترسی دارید.",
-            "Welcome to *Nova Signal* 👋\n\nWe analyze Forex and Crypto markets with AI and send free signals to you every hour.\n\n{$status}\n\nChoose an option from the menu below.\nVIP unlocks more signals and full access."
+            [],
+            "به «نُوا سیگنال» خوش آمدید 👋\n\nما با کمک هوش مصنوعی، بازارهای فارکس و ارز دیجیتال را تحلیل می‌کنیم و هر ساعت سیگنال‌های رایگان را برای شما ارسال می‌کنیم.\n\nاز منوی زیر گزینه موردنظرتان را انتخاب کنید.\nبا عضویت VIP به سیگنال‌های بیشتری دسترسی دارید.",
+            "Welcome to Nova Signal 👋\n\nWe analyze Forex and Crypto markets with AI and send free signals to you every hour.\n\nChoose an option from the menu below.\nWith a VIP membership, you get access to more signals."
         );
     }
 
@@ -183,8 +181,8 @@ class TelegramService
     {
         $descriptions = [
             BotLanguage::Fa->value => [
-                'description' => 'به نوا سیگنال خوش آمدید. ما با کمک هوش مصنوعی، سیگنال‌های فارکس و ارز دیجیتال را تحلیل می‌کنیم و هر ساعت به‌صورت رایگان برایتان ارسال می‌کنیم. برای شروع، Start را بزنید.',
-                'short_description' => 'سیگنال رایگان فارکس و کریپتو با هوش مصنوعی — نوا سیگنال',
+                'description' => 'به نُوا سیگنال خوش آمدید. ما با کمک هوش مصنوعی، سیگنال‌های فارکس و ارز دیجیتال را تحلیل می‌کنیم و هر ساعت به‌صورت رایگان برایتان ارسال می‌کنیم. برای شروع، Start را بزنید.',
+                'short_description' => 'سیگنال رایگان فارکس و کریپتو با هوش مصنوعی — نُوا سیگنال',
             ],
             BotLanguage::En->value => [
                 'description' => 'Welcome to Nova Signal. We analyze Forex and Crypto markets with AI and send free signals every hour. Tap Start to begin.',
