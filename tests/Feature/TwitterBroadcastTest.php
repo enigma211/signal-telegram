@@ -79,7 +79,8 @@ class TwitterBroadcastTest extends TestCase
 
         (new PostSignalToTwitterJob($signal))->handle(
             app(TwitterService::class),
-            app(SignalMessageBuilder::class)
+            app(SignalMessageBuilder::class),
+            app(\App\Services\TwitterDeliveryLogger::class)
         );
 
         Http::assertNothingSent();

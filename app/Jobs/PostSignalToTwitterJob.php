@@ -7,6 +7,7 @@ use App\Enums\TargetAudience;
 use App\Models\Signal;
 use App\Models\TwitterSetting;
 use App\Services\SignalMessageBuilder;
+use App\Services\TwitterDeliveryLogger;
 use App\Services\TwitterService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -31,8 +32,11 @@ class PostSignalToTwitterJob implements ShouldQueue
         $this->onQueue('default');
     }
 
-    public function handle(TwitterService $twitter, SignalMessageBuilder $builder): void
-    {
+    public function handle(
+        TwitterService $twitter,
+        SignalMessageBuilder $builder,
+        TwitterDeliveryLogger $logger
+    ): void {
         $settings = TwitterSetting::current();
 
         if (! $settings->isReady()) {
@@ -53,7 +57,10 @@ class PostSignalToTwitterJob implements ShouldQueue
         }
 
         $text = $twitter->toPlainText($builder->signal($signal, BotLanguage::En));
-        $text = $this->appendCta($text, $settings, $twitter);
+        $cta = $settings->resolvedCta();
+        if ($cta !== '') {
+            $text = $twitter->fitTweet(rtrim($text)."\n\n".$cta);
+        }
 
         try {
             $result = $twitter->post($text, $signal->image_path);
@@ -62,21 +69,16 @@ class PostSignalToTwitterJob implements ShouldQueue
                 'tweet_id' => $result['id'] ?? null,
             ]);
         } catch (Throwable $e) {
+            // Log only on final attempt to avoid duplicate rows from queue retries
+            if ($this->attempts() >= $this->tries) {
+                $logger->recordFailure('signal', $e->getMessage(), $text, $signal);
+            }
             Log::error('Failed posting signal to Twitter', [
                 'signal_id' => $signal->id,
                 'message' => $e->getMessage(),
+                'attempt' => $this->attempts(),
             ]);
             throw $e;
         }
-    }
-
-    protected function appendCta(string $text, TwitterSetting $settings, TwitterService $twitter): string
-    {
-        $cta = $settings->resolvedCta();
-        if ($cta === '') {
-            return $text;
-        }
-
-        return $twitter->fitTweet(rtrim($text)."\n\n".$cta);
     }
 }
