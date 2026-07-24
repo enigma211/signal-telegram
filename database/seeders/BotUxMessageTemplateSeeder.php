@@ -12,10 +12,10 @@ class BotUxMessageTemplateSeeder extends Seeder
         $templates = [
             [
                 'key' => 'welcome',
-                'name' => 'خوش‌آمدگویی /start',
+                'name' => 'خوش‌آمدگویی / داشبورد',
                 'placeholders_help' => '{status}',
-                'body_fa' => "سلام! به ربات سیگنال هوش مصنوعی خوش آمدید.\n\n{status}\n\nدر حالت رایگان، بخشی از سیگنال‌ها (نمونه تبلیغاتی) برای همه ارسال می‌شود.\nبا خرید VIP به سیگنال‌های بیشتر و کامل دسترسی دارید.",
-                'body_en' => "Welcome to the AI Signal Bot!\n\n{status}\n\nOn the free plan you still receive selected public/promo signals.\nVIP unlocks more signals and full access.",
+                'body_fa' => "به *نوا سیگنال* خوش آمدید 👋\n\nما با کمک هوش مصنوعی، بازارهای فارکس و ارز دیجیتال را تحلیل می‌کنیم و هر ساعت سیگنال‌های رایگان را برای شما ارسال می‌کنیم.\n\n{status}\n\nاز منوی زیر گزینه موردنظرتان را انتخاب کنید.\nبا VIP به سیگنال‌های بیشتر و کامل دسترسی دارید.",
+                'body_en' => "Welcome to *Nova Signal* 👋\n\nWe analyze Forex and Crypto markets with AI and send free signals to you every hour.\n\n{status}\n\nChoose an option from the menu below.\nVIP unlocks more signals and full access.",
             ],
             [
                 'key' => 'status',
@@ -28,8 +28,8 @@ class BotUxMessageTemplateSeeder extends Seeder
                 'key' => 'choose_menu',
                 'name' => 'انتخاب از منو',
                 'placeholders_help' => '',
-                'body_fa' => 'از منوی زیر یک گزینه را انتخاب کنید.',
-                'body_en' => 'Please choose an option from the menu.',
+                'body_fa' => '🏠 *داشبورد*\nاز منوی زیر یک گزینه را انتخاب کنید.',
+                'body_en' => '🏠 *Dashboard*\nPlease choose an option from the menu.',
             ],
             [
                 'key' => 'support_start',

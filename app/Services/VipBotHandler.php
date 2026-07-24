@@ -31,7 +31,7 @@ class VipBotHandler
             $data === 'menu:wallet' => $this->onWalletPrompt($user, $chatId, $callbackId, $telegram, $messageId),
             $data === 'menu:ref' => $this->onReferral($user, $chatId, $callbackId, $telegram, $messageId),
             $data === 'menu:help' => $this->onHelp($user, $chatId, $callbackId, $telegram, $messageId),
-            $data === 'menu:home' => $this->onHome($user, $chatId, $callbackId, $telegram, $messageId),
+            $data === 'menu:home', $data === 'menu:dashboard' => $this->onHome($user, $chatId, $callbackId, $telegram, $messageId),
             $data === 'menu:support' => $this->onSupport($user, $chatId, $callbackId, $telegram, $messageId),
             $data === 'support:cancel' => $this->onSupportCancel($user, $chatId, $callbackId, $telegram, $messageId),
             $data === 'promo:skip' => $this->onPromoSkip($user, $chatId, $callbackId, $telegram, $messageId),
@@ -74,8 +74,14 @@ class VipBotHandler
             return;
         }
 
-        if (in_array($normalized, ['/help', 'راهنما', 'help', '/menu', 'منو'], true)) {
+        if (in_array($normalized, ['/help', 'راهنما', 'help'], true)) {
             $telegram->sendMessage($chatId, $this->helpText($user), $this->menuKeyboard($user));
+
+            return;
+        }
+
+        if (in_array($normalized, ['/menu', 'منو', '/dashboard', 'داشبورد', '/home', 'خانه'], true)) {
+            $telegram->sendMessage($chatId, $telegram->welcomeText($user), $this->menuKeyboard($user));
 
             return;
         }
@@ -110,7 +116,7 @@ class VipBotHandler
             'await_support' => $this->receiveSupportMessage($user, $chatId, $text, $telegram),
             default => $telegram->sendMessage(
                 $chatId,
-                $this->copy->get('choose_menu', $user, [], 'از منوی زیر یک گزینه را انتخاب کنید.', 'Please choose an option from the menu.'),
+                $telegram->welcomeText($user),
                 $this->menuKeyboard($user)
             ),
         };
@@ -121,6 +127,9 @@ class VipBotHandler
         $fa = $user->bot_language === BotLanguage::Fa;
 
         $rows = [
+            [
+                ['text' => $fa ? '🏠 داشبورد' : '🏠 Dashboard', 'callback_data' => 'menu:dashboard'],
+            ],
             [
                 ['text' => $fa ? '💎 خرید VIP' : '💎 Buy VIP', 'callback_data' => 'menu:buy'],
                 ['text' => $fa ? '📊 وضعیت' : '📊 Status', 'callback_data' => 'menu:status'],
@@ -292,7 +301,7 @@ class VipBotHandler
         $telegram->answerCallbackQuery($callbackId);
         $telegram->respond(
             $chatId,
-            $this->copy->get('choose_menu', $user, [], 'از منوی زیر یک گزینه را انتخاب کنید.', 'Please choose an option from the menu.'),
+            $telegram->welcomeText($user->fresh()),
             $this->menuKeyboard($user),
             $messageId
         );
@@ -331,8 +340,8 @@ class VipBotHandler
                     'callback_data' => 'plan:full',
                 ]],
                 [[
-                    'text' => $fa ? '⬅️ بازگشت به منو' : '⬅️ Back to menu',
-                    'callback_data' => 'menu:home',
+                    'text' => $fa ? '🏠 داشبورد' : '🏠 Dashboard',
+                    'callback_data' => 'menu:dashboard',
                 ]],
             ],
         ];
@@ -541,7 +550,7 @@ class VipBotHandler
 
         $telegram->respond($chatId, $text, [
             'inline_keyboard' => [[
-                ['text' => $fa ? '⬅️ بازگشت به منو' : '⬅️ Back to menu', 'callback_data' => 'menu:home'],
+                ['text' => $fa ? '🏠 داشبورد' : '🏠 Dashboard', 'callback_data' => 'menu:dashboard'],
             ]],
         ], $messageId);
     }
@@ -615,7 +624,7 @@ class VipBotHandler
 
         $telegram->respond($chatId, $text, [
             'inline_keyboard' => [[
-                ['text' => $fa ? '⬅️ بازگشت به منو' : '⬅️ Back to menu', 'callback_data' => 'menu:home'],
+                ['text' => $fa ? '🏠 داشبورد' : '🏠 Dashboard', 'callback_data' => 'menu:dashboard'],
             ]],
         ], $messageId);
     }
@@ -672,8 +681,8 @@ class VipBotHandler
             'help',
             $user,
             [],
-            "❓ *راهنما*\nهمه کاربران به‌صورت رایگان عضو هستند و سیگنال‌های عمومی (نمونه تبلیغاتی) را دریافت می‌کنند.\nبا خرید VIP به سیگنال‌های بیشتر دسترسی دارید.\n\n/buy — خرید VIP\n/status — وضعیت اشتراک\n/wallet — ثبت ولت پاداش\n/referral — کد معرف\n/support — پشتیبانی\n/help — راهنما",
-            "❓ *Help*\nEveryone starts on the free plan and receives public/promo signals.\nVIP unlocks more signals.\n\n/buy — Buy VIP\n/status — Subscription status\n/wallet — Save payout wallet\n/referral — Referral code\n/support — Support\n/help — Help"
+            "❓ *راهنما*\nهمه کاربران به‌صورت رایگان عضو هستند و سیگنال‌های عمومی را دریافت می‌کنند.\nبا خرید VIP به سیگنال‌های بیشتر دسترسی دارید.\n\n🏠 داشبورد — صفحه اصلی\n/buy — خرید VIP\n/status — وضعیت اشتراک\n/wallet — ثبت ولت پاداش\n/referral — کد معرف\n/support — پشتیبانی\n/help — راهنما",
+            "❓ *Help*\nEveryone starts on the free plan and receives public signals.\nVIP unlocks more signals.\n\n🏠 Dashboard — Home\n/buy — Buy VIP\n/status — Subscription status\n/wallet — Save payout wallet\n/referral — Referral code\n/support — Support\n/help — Help"
         );
     }
 

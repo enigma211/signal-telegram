@@ -166,14 +166,57 @@ class TelegramService
             'welcome',
             $user,
             ['status' => $status],
-            "سلام! به ربات سیگنال هوش مصنوعی خوش آمدید.\n\n{$status}\n\nدر حالت رایگان، بخشی از سیگنال‌ها (نمونه تبلیغاتی) برای همه ارسال می‌شود.\nبا خرید VIP به سیگنال‌های بیشتر و کامل دسترسی دارید.",
-            "Welcome to the AI Signal Bot!\n\n{$status}\n\nOn the free plan you still receive selected public/promo signals.\nVIP unlocks more signals and full access."
+            "به *نوا سیگنال* خوش آمدید 👋\n\nما با کمک هوش مصنوعی، بازارهای فارکس و ارز دیجیتال را تحلیل می‌کنیم و هر ساعت سیگنال‌های رایگان را برای شما ارسال می‌کنیم.\n\n{$status}\n\nاز منوی زیر گزینه موردنظرتان را انتخاب کنید.\nبا VIP به سیگنال‌های بیشتر و کامل دسترسی دارید.",
+            "Welcome to *Nova Signal* 👋\n\nWe analyze Forex and Crypto markets with AI and send free signals to you every hour.\n\n{$status}\n\nChoose an option from the menu below.\nVIP unlocks more signals and full access."
         );
     }
 
     public function mainKeyboard(TelegramUser $user): array
     {
         return app(VipBotHandler::class)->menuKeyboard($user);
+    }
+
+    /**
+     * Profile texts shown before the user presses Start (BotFather-style description).
+     */
+    public function syncPublicDescriptions(): void
+    {
+        $descriptions = [
+            BotLanguage::Fa->value => [
+                'description' => 'به نوا سیگنال خوش آمدید. ما با کمک هوش مصنوعی، سیگنال‌های فارکس و ارز دیجیتال را تحلیل می‌کنیم و هر ساعت به‌صورت رایگان برایتان ارسال می‌کنیم. برای شروع، Start را بزنید.',
+                'short_description' => 'سیگنال رایگان فارکس و کریپتو با هوش مصنوعی — نوا سیگنال',
+            ],
+            BotLanguage::En->value => [
+                'description' => 'Welcome to Nova Signal. We analyze Forex and Crypto markets with AI and send free signals every hour. Tap Start to begin.',
+                'short_description' => 'Free Forex & Crypto AI signals — Nova Signal',
+            ],
+        ];
+
+        foreach ($descriptions as $lang => $texts) {
+            try {
+                $bot = $this->forLanguage($lang);
+                $bot->request('setMyDescription', [
+                    'description' => $texts['description'],
+                    'language_code' => $lang === 'fa' ? 'fa' : 'en',
+                ]);
+                $bot->request('setMyShortDescription', [
+                    'short_description' => $texts['short_description'],
+                    'language_code' => $lang === 'fa' ? 'fa' : 'en',
+                ]);
+                // Also set default (no language_code) for clients without locale match.
+                $bot->request('setMyDescription', [
+                    'description' => $texts['description'],
+                ]);
+                $bot->request('setMyShortDescription', [
+                    'short_description' => $texts['short_description'],
+                ]);
+            } catch (\Throwable $e) {
+                Log::warning('Failed to sync Telegram bot description', [
+                    'language' => $lang,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
     }
 
     public function sendMessage(
