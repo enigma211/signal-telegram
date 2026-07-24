@@ -66,6 +66,7 @@ class SupportTicketResource extends Resource
                         ->required(),
                     Forms\Components\DateTimePicker::make('last_message_at')
                         ->label('آخرین پیام')
+                        ->jalali()
                         ->disabled(),
                 ])->columns(2),
             ]);

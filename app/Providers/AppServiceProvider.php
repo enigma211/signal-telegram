@@ -4,7 +4,6 @@ namespace App\Providers;
 
 use Carbon\Carbon;
 use Filament\Support\Facades\FilamentView;
-use Filament\Tables\Columns\TextColumn;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Support\ServiceProvider;
 
@@ -18,20 +17,6 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Carbon::setLocale('fa');
-
-        TextColumn::macro('jalaliDateTime', function (string $format = 'Y/m/d H:i'): TextColumn {
-            /** @var TextColumn $this */
-            return $this
-                ->formatStateUsing(fn ($state): string => jalali($state, $format))
-                ->placeholder('—');
-        });
-
-        TextColumn::macro('jalaliDate', function (string $format = 'Y/m/d'): TextColumn {
-            /** @var TextColumn $this */
-            return $this
-                ->formatStateUsing(fn ($state): string => jalali($state, $format))
-                ->placeholder('—');
-        });
 
         FilamentView::registerRenderHook(
             PanelsRenderHook::HEAD_END,

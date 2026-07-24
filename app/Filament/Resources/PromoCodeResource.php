@@ -45,7 +45,8 @@ class PromoCodeResource extends Resource
                         ->suffix('%')
                         ->required(),
                     Forms\Components\DateTimePicker::make('expires_at')
-                        ->label('تاریخ انقضا'),
+                        ->label('تاریخ انقضا')
+                        ->jalali(),
                     Forms\Components\TextInput::make('max_uses')
                         ->label('حداکثر استفاده')
                         ->numeric()

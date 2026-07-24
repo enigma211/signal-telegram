@@ -69,7 +69,8 @@ class TelegramUserResource extends Resource
                         ))
                         ->required(),
                     Forms\Components\DateTimePicker::make('vip_expires_at')
-                        ->label('انقضای VIP'),
+                        ->label('انقضای VIP')
+                        ->jalali(),
                     Forms\Components\TextInput::make('referral_code')
                         ->label('کد معرف')
                         ->disabled()
