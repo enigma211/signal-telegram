@@ -210,5 +210,46 @@ class TelegramWebhookTest extends TestCase
             'telegram_id' => '123123123',
             'bot_state' => 'await_support',
         ]);
+
+        Http::assertSent(fn ($request) => str_contains($request->url(), 'EN-TEST-TOKEN/editMessageText'));
+    }
+
+    public function test_status_callback_edits_message_in_place(): void
+    {
+        TelegramUser::query()->create([
+            'telegram_id' => '321321321',
+            'bot_language' => BotLanguage::Fa,
+            'subscription_tier' => SubscriptionTier::Free,
+            'referral_code' => 'FAUSER01',
+            'first_name' => 'Ali',
+        ]);
+
+        $payload = [
+            'callback_query' => [
+                'id' => 'cb-status-1',
+                'from' => ['id' => 321321321, 'is_bot' => false, 'first_name' => 'Ali'],
+                'data' => 'menu:status',
+                'message' => [
+                    'message_id' => 42,
+                    'chat' => ['id' => 321321321, 'type' => 'private'],
+                    'text' => 'old menu',
+                ],
+            ],
+        ];
+
+        $this->postJson('/api/telegram/webhook/fa', $payload, $this->webhookHeaders())->assertOk();
+
+        Http::assertSent(function ($request) {
+            if (! str_contains($request->url(), 'FA-TEST-TOKEN/editMessageText')) {
+                return false;
+            }
+
+            $body = $request->data();
+
+            return (int) ($body['message_id'] ?? 0) === 42
+                && (string) ($body['chat_id'] ?? '') === '321321321';
+        });
+
+        Http::assertNotSent(fn ($request) => str_contains($request->url(), 'FA-TEST-TOKEN/sendMessage'));
     }
 }

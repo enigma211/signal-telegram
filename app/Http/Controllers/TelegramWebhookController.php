@@ -83,6 +83,7 @@ class TelegramWebhookController extends Controller
         $callbackId = data_get($callbackQuery, 'id');
         $data = (string) data_get($callbackQuery, 'data', '');
         $chatId = data_get($callbackQuery, 'message.chat.id');
+        $messageId = data_get($callbackQuery, 'message.message_id');
         $from = data_get($callbackQuery, 'from', []);
         $telegramId = (string) data_get($from, 'id');
         $profile = $this->profileFromTelegramUser(is_array($from) ? $from : []);
@@ -92,7 +93,13 @@ class TelegramWebhookController extends Controller
         }
 
         $user = $this->telegram->forLanguage($botLanguage)->registerSilently($telegramId, $botLanguage, null, $profile);
-        $this->vipBot->handleCallback($user, (string) $chatId, (string) $callbackId, $data);
+        $this->vipBot->handleCallback(
+            $user,
+            (string) $chatId,
+            (string) $callbackId,
+            $data,
+            $messageId !== null ? (int) $messageId : null
+        );
     }
 
     /**

@@ -16,21 +16,27 @@ class VipBotHandler
         protected BotCopy $copy
     ) {}
 
-    public function handleCallback(TelegramUser $user, string $chatId, string $callbackId, string $data): void
-    {
+    public function handleCallback(
+        TelegramUser $user,
+        string $chatId,
+        string $callbackId,
+        string $data,
+        ?int $messageId = null
+    ): void {
         $telegram = $this->telegram->forUser($user);
 
         match (true) {
-            $data === 'menu:buy' => $this->onBuyMenu($user, $chatId, $callbackId, $telegram),
-            $data === 'menu:status' => $this->onStatus($user, $chatId, $callbackId, $telegram),
-            $data === 'menu:wallet' => $this->onWalletPrompt($user, $chatId, $callbackId, $telegram),
-            $data === 'menu:ref' => $this->onReferral($user, $chatId, $callbackId, $telegram),
-            $data === 'menu:help' => $this->onHelp($user, $chatId, $callbackId, $telegram),
-            $data === 'menu:support' => $this->onSupport($user, $chatId, $callbackId, $telegram),
-            $data === 'support:cancel' => $this->onSupportCancel($user, $chatId, $callbackId, $telegram),
-            $data === 'promo:skip' => $this->onPromoSkip($user, $chatId, $callbackId, $telegram),
-            str_starts_with($data, 'plan:') => $this->onPlanSelected($user, $chatId, $callbackId, $data, $telegram),
-            str_starts_with($data, 'net:') => $this->onNetworkSelected($user, $chatId, $callbackId, $data, $telegram),
+            $data === 'menu:buy' => $this->onBuyMenu($user, $chatId, $callbackId, $telegram, $messageId),
+            $data === 'menu:status' => $this->onStatus($user, $chatId, $callbackId, $telegram, $messageId),
+            $data === 'menu:wallet' => $this->onWalletPrompt($user, $chatId, $callbackId, $telegram, $messageId),
+            $data === 'menu:ref' => $this->onReferral($user, $chatId, $callbackId, $telegram, $messageId),
+            $data === 'menu:help' => $this->onHelp($user, $chatId, $callbackId, $telegram, $messageId),
+            $data === 'menu:home' => $this->onHome($user, $chatId, $callbackId, $telegram, $messageId),
+            $data === 'menu:support' => $this->onSupport($user, $chatId, $callbackId, $telegram, $messageId),
+            $data === 'support:cancel' => $this->onSupportCancel($user, $chatId, $callbackId, $telegram, $messageId),
+            $data === 'promo:skip' => $this->onPromoSkip($user, $chatId, $callbackId, $telegram, $messageId),
+            str_starts_with($data, 'plan:') => $this->onPlanSelected($user, $chatId, $callbackId, $data, $telegram, $messageId),
+            str_starts_with($data, 'net:') => $this->onNetworkSelected($user, $chatId, $callbackId, $data, $telegram, $messageId),
             default => $telegram->answerCallbackQuery($callbackId),
         };
     }
@@ -132,25 +138,40 @@ class VipBotHandler
         return ['inline_keyboard' => $rows];
     }
 
-    protected function onSupport(TelegramUser $user, string $chatId, string $callbackId, TelegramService $telegram): void
-    {
+    protected function onSupport(
+        TelegramUser $user,
+        string $chatId,
+        string $callbackId,
+        TelegramService $telegram,
+        ?int $messageId = null
+    ): void {
         $telegram->answerCallbackQuery($callbackId);
-        $this->startSupport($user, $chatId, $telegram);
+        $this->startSupport($user, $chatId, $telegram, $messageId);
     }
 
-    protected function onSupportCancel(TelegramUser $user, string $chatId, string $callbackId, TelegramService $telegram): void
-    {
+    protected function onSupportCancel(
+        TelegramUser $user,
+        string $chatId,
+        string $callbackId,
+        TelegramService $telegram,
+        ?int $messageId = null
+    ): void {
         $telegram->answerCallbackQuery($callbackId);
         app(SupportService::class)->endSession($user);
-        $telegram->sendMessage(
+        $telegram->respond(
             $chatId,
             $this->copy->get('support_cancel', $user, [], 'خروج از پشتیبانی.', 'Left support mode.'),
-            $this->menuKeyboard($user)
+            $this->menuKeyboard($user),
+            $messageId
         );
     }
 
-    protected function startSupport(TelegramUser $user, string $chatId, TelegramService $telegram): void
-    {
+    protected function startSupport(
+        TelegramUser $user,
+        string $chatId,
+        TelegramService $telegram,
+        ?int $messageId = null
+    ): void {
         app(SupportService::class)->startSession($user);
 
         $fa = $user->bot_language === BotLanguage::Fa;
@@ -162,11 +183,11 @@ class VipBotHandler
             "🆘 *Support*\nWrite your message here.\nTo exit: /cancel"
         );
 
-        $telegram->sendMessage($chatId, $text, [
+        $telegram->respond($chatId, $text, [
             'inline_keyboard' => [[
                 ['text' => $fa ? 'انصراف' : 'Cancel', 'callback_data' => 'support:cancel'],
             ]],
-        ]);
+        ], $messageId);
     }
 
     protected function receiveSupportMessage(
@@ -206,38 +227,83 @@ class VipBotHandler
         );
     }
 
-    protected function onBuyMenu(TelegramUser $user, string $chatId, string $callbackId, TelegramService $telegram): void
-    {
+    protected function onBuyMenu(
+        TelegramUser $user,
+        string $chatId,
+        string $callbackId,
+        TelegramService $telegram,
+        ?int $messageId = null
+    ): void {
         $telegram->answerCallbackQuery($callbackId);
-        $this->showPlans($user, $chatId, $telegram);
+        $this->showPlans($user, $chatId, $telegram, $messageId);
     }
 
-    protected function onStatus(TelegramUser $user, string $chatId, string $callbackId, TelegramService $telegram): void
-    {
+    protected function onStatus(
+        TelegramUser $user,
+        string $chatId,
+        string $callbackId,
+        TelegramService $telegram,
+        ?int $messageId = null
+    ): void {
         $telegram->answerCallbackQuery($callbackId);
-        $telegram->sendMessage($chatId, $this->vip->statusText($user), $this->menuKeyboard($user));
+        $telegram->respond($chatId, $this->vip->statusText($user), $this->menuKeyboard($user), $messageId);
     }
 
-    protected function onWalletPrompt(TelegramUser $user, string $chatId, string $callbackId, TelegramService $telegram): void
-    {
+    protected function onWalletPrompt(
+        TelegramUser $user,
+        string $chatId,
+        string $callbackId,
+        TelegramService $telegram,
+        ?int $messageId = null
+    ): void {
         $telegram->answerCallbackQuery($callbackId);
-        $this->askWallet($user, $chatId, $telegram);
+        $this->askWallet($user, $chatId, $telegram, $messageId);
     }
 
-    protected function onReferral(TelegramUser $user, string $chatId, string $callbackId, TelegramService $telegram): void
-    {
+    protected function onReferral(
+        TelegramUser $user,
+        string $chatId,
+        string $callbackId,
+        TelegramService $telegram,
+        ?int $messageId = null
+    ): void {
         $telegram->answerCallbackQuery($callbackId);
-        $telegram->sendMessage($chatId, $this->referralText($user), $this->menuKeyboard($user));
+        $telegram->respond($chatId, $this->referralText($user), $this->menuKeyboard($user), $messageId);
     }
 
-    protected function onHelp(TelegramUser $user, string $chatId, string $callbackId, TelegramService $telegram): void
-    {
+    protected function onHelp(
+        TelegramUser $user,
+        string $chatId,
+        string $callbackId,
+        TelegramService $telegram,
+        ?int $messageId = null
+    ): void {
         $telegram->answerCallbackQuery($callbackId);
-        $telegram->sendMessage($chatId, $this->helpText($user), $this->menuKeyboard($user));
+        $telegram->respond($chatId, $this->helpText($user), $this->menuKeyboard($user), $messageId);
     }
 
-    protected function showPlans(TelegramUser $user, string $chatId, TelegramService $telegram): void
-    {
+    protected function onHome(
+        TelegramUser $user,
+        string $chatId,
+        string $callbackId,
+        TelegramService $telegram,
+        ?int $messageId = null
+    ): void {
+        $telegram->answerCallbackQuery($callbackId);
+        $telegram->respond(
+            $chatId,
+            $this->copy->get('choose_menu', $user, [], 'از منوی زیر یک گزینه را انتخاب کنید.', 'Please choose an option from the menu.'),
+            $this->menuKeyboard($user),
+            $messageId
+        );
+    }
+
+    protected function showPlans(
+        TelegramUser $user,
+        string $chatId,
+        TelegramService $telegram,
+        ?int $messageId = null
+    ): void {
         $settings = $this->vip->settings();
         $fa = $user->bot_language === BotLanguage::Fa;
         $currency = $settings->currency;
@@ -264,10 +330,14 @@ class VipBotHandler
                     'text' => ($fa ? 'کامل (فارکس+کریپتو)' : 'Full (Forex+Crypto)')." — {$settings->price_full} {$currency}",
                     'callback_data' => 'plan:full',
                 ]],
+                [[
+                    'text' => $fa ? '⬅️ بازگشت به منو' : '⬅️ Back to menu',
+                    'callback_data' => 'menu:home',
+                ]],
             ],
         ];
 
-        $telegram->sendMessage($chatId, $text, $keyboard);
+        $telegram->respond($chatId, $text, $keyboard, $messageId);
     }
 
     protected function onPlanSelected(
@@ -275,7 +345,8 @@ class VipBotHandler
         string $chatId,
         string $callbackId,
         string $data,
-        TelegramService $telegram
+        TelegramService $telegram,
+        ?int $messageId = null
     ): void {
         $tier = $this->tierFromCallback($data);
         $telegram->answerCallbackQuery($callbackId);
@@ -297,22 +368,28 @@ class VipBotHandler
         );
 
         $keyboard = [
-            'inline_keyboard' => [[
-                ['text' => $fa ? 'ادامه بدون کد' : 'Skip promo', 'callback_data' => 'promo:skip'],
-            ]],
+            'inline_keyboard' => [
+                [
+                    ['text' => $fa ? 'ادامه بدون کد' : 'Skip promo', 'callback_data' => 'promo:skip'],
+                ],
+                [
+                    ['text' => $fa ? '⬅️ بازگشت' : '⬅️ Back', 'callback_data' => 'menu:buy'],
+                ],
+            ],
         ];
 
-        $telegram->sendMessage($chatId, $text, $keyboard);
+        $telegram->respond($chatId, $text, $keyboard, $messageId);
     }
 
     protected function onPromoSkip(
         TelegramUser $user,
         string $chatId,
         string $callbackId,
-        TelegramService $telegram
+        TelegramService $telegram,
+        ?int $messageId = null
     ): void {
         $telegram->answerCallbackQuery($callbackId);
-        $this->afterPromo($user, $chatId, null, $telegram);
+        $this->afterPromo($user, $chatId, null, $telegram, $messageId);
     }
 
     protected function receivePromo(
@@ -339,11 +416,17 @@ class VipBotHandler
         TelegramUser $user,
         string $chatId,
         ?string $promoCode,
-        TelegramService $telegram
+        TelegramService $telegram,
+        ?int $messageId = null
     ): void {
         $payload = $user->bot_state_payload ?? [];
         if (empty($payload['tier'])) {
-            $telegram->sendMessage($chatId, $this->t($user, 'لطفاً دوباره پلن را انتخاب کنید.', 'Please select a plan again.'), $this->menuKeyboard($user));
+            $telegram->respond(
+                $chatId,
+                $this->t($user, 'لطفاً دوباره پلن را انتخاب کنید.', 'Please select a plan again.'),
+                $this->menuKeyboard($user),
+                $messageId
+            );
 
             return;
         }
@@ -380,14 +463,17 @@ class VipBotHandler
             "Amount due: *{$amount}* {$this->vip->settings()->currency}{$discountLine}\n\nChoose payment network:"
         );
 
-        $telegram->sendMessage($chatId, $text, [
+        $telegram->respond($chatId, $text, [
             'inline_keyboard' => [
                 [
                     ['text' => 'TRC20', 'callback_data' => 'net:TRC20'],
                     ['text' => 'BEP20', 'callback_data' => 'net:BEP20'],
                 ],
+                [
+                    ['text' => $fa ? '⬅️ بازگشت' : '⬅️ Back', 'callback_data' => 'menu:buy'],
+                ],
             ],
-        ]);
+        ], $messageId);
     }
 
     protected function onNetworkSelected(
@@ -395,21 +481,27 @@ class VipBotHandler
         string $chatId,
         string $callbackId,
         string $data,
-        TelegramService $telegram
+        TelegramService $telegram,
+        ?int $messageId = null
     ): void {
         $network = strtoupper(substr($data, 4));
         $telegram->answerCallbackQuery($callbackId);
 
         $payload = $user->bot_state_payload ?? [];
         if (empty($payload['tier']) || empty($payload['amount'])) {
-            $telegram->sendMessage($chatId, $this->t($user, 'لطفاً دوباره از خرید شروع کنید.', 'Please restart the purchase.'), $this->menuKeyboard($user));
+            $telegram->respond(
+                $chatId,
+                $this->t($user, 'لطفاً دوباره از خرید شروع کنید.', 'Please restart the purchase.'),
+                $this->menuKeyboard($user),
+                $messageId
+            );
 
             return;
         }
 
         $wallet = $this->vip->settings()->walletForNetwork($network);
         if (blank($wallet)) {
-            $telegram->sendMessage(
+            $telegram->respond(
                 $chatId,
                 $this->copy->get(
                     'buy_wallet_missing',
@@ -418,7 +510,8 @@ class VipBotHandler
                     "آدرس ولت {$network} هنوز در پنل تنظیم نشده است. به پشتیبانی پیام دهید.",
                     "{$network} wallet is not configured yet. Please contact support."
                 ),
-                $this->menuKeyboard($user)
+                $this->menuKeyboard($user),
+                $messageId
             );
 
             return;
@@ -431,6 +524,7 @@ class VipBotHandler
 
         $amount = $payload['amount'];
         $currency = $this->vip->settings()->currency;
+        $fa = $user->bot_language === BotLanguage::Fa;
 
         $text = $this->copy->get(
             'buy_payment_instructions',
@@ -445,7 +539,11 @@ class VipBotHandler
             "💸 *VIP Payment*\n\nAmount: `{$amount}` {$currency}\nNetwork: *{$network}*\nWallet:\n`{$wallet}`\n\nAfter payment, send the *transaction hash (TxID)* here."
         );
 
-        $telegram->sendMessage($chatId, $text);
+        $telegram->respond($chatId, $text, [
+            'inline_keyboard' => [[
+                ['text' => $fa ? '⬅️ بازگشت به منو' : '⬅️ Back to menu', 'callback_data' => 'menu:home'],
+            ]],
+        ], $messageId);
     }
 
     protected function receiveTxHash(
@@ -493,8 +591,12 @@ class VipBotHandler
         $telegram->sendMessage($chatId, $text, $this->menuKeyboard($user->fresh()));
     }
 
-    protected function askWallet(TelegramUser $user, string $chatId, TelegramService $telegram): void
-    {
+    protected function askWallet(
+        TelegramUser $user,
+        string $chatId,
+        TelegramService $telegram,
+        ?int $messageId = null
+    ): void {
         $user->update(['bot_state' => 'await_wallet', 'bot_state_payload' => null]);
 
         $current = $user->crypto_wallet_address
@@ -509,7 +611,13 @@ class VipBotHandler
             "👛 Your payout wallet:\n{$current}\n\nSend your new wallet address:"
         );
 
-        $telegram->sendMessage($chatId, $text);
+        $fa = $user->bot_language === BotLanguage::Fa;
+
+        $telegram->respond($chatId, $text, [
+            'inline_keyboard' => [[
+                ['text' => $fa ? '⬅️ بازگشت به منو' : '⬅️ Back to menu', 'callback_data' => 'menu:home'],
+            ]],
+        ], $messageId);
     }
 
     protected function receiveWallet(

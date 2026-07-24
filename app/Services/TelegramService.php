@@ -195,6 +195,57 @@ class TelegramService
         return $this->request('sendMessage', $payload);
     }
 
+    public function editMessageText(
+        string|int $chatId,
+        int $messageId,
+        string $text,
+        ?array $replyMarkup = null,
+        string $parseMode = 'Markdown'
+    ): ?Response {
+        $payload = [
+            'chat_id' => $chatId,
+            'message_id' => $messageId,
+            'text' => $text,
+            'parse_mode' => $parseMode,
+        ];
+
+        if ($replyMarkup !== null) {
+            $payload['reply_markup'] = ! empty($replyMarkup['inline_keyboard'])
+                ? $replyMarkup
+                : ['inline_keyboard' => []];
+        }
+
+        return $this->request('editMessageText', $payload);
+    }
+
+    /**
+     * Edit an existing bot message when possible; otherwise send a new one.
+     */
+    public function respond(
+        string|int $chatId,
+        string $text,
+        ?array $replyMarkup = null,
+        ?int $messageId = null,
+        string $parseMode = 'Markdown'
+    ): ?Response {
+        if ($messageId !== null) {
+            $response = $this->editMessageText($chatId, $messageId, $text, $replyMarkup, $parseMode);
+
+            if ($response !== null && $response->successful()) {
+                return $response;
+            }
+
+            $description = (string) data_get($response?->json(), 'description', '');
+
+            // Same content is fine for in-place UX; treat as success.
+            if (str_contains($description, 'message is not modified')) {
+                return $response;
+            }
+        }
+
+        return $this->sendMessage($chatId, $text, $replyMarkup, $parseMode);
+    }
+
     public function sendPhoto(
         string|int $chatId,
         string $photo,
