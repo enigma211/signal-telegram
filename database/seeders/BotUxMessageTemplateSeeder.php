@@ -21,8 +21,8 @@ class BotUxMessageTemplateSeeder extends Seeder
                 'key' => 'status',
                 'name' => 'وضعیت اشتراک',
                 'placeholders_help' => '{tier} {state} {expiry} {referral_code}',
-                'body_fa' => "📊 *وضعیت اشتراک*\nسطح: *{tier}*\nوضعیت: *{state}*\nانقضا: `{expiry}`\nکد معرف: `{referral_code}`",
-                'body_en' => "📊 *Subscription Status*\nPlan: *{tier}*\nStatus: *{state}*\nExpires: `{expiry}`\nReferral code: `{referral_code}`",
+                'body_fa' => "📊 *وضعیت اشتراک*\nسطح: *{tier}*\nوضعیت: *{state}*\nانقضا: `{expiry}`\nکد معرف: `{referral_code}`\n\nاز منوی زیر می‌توانید به داشبورد برگردید یا خرید VIP را شروع کنید.",
+                'body_en' => "📊 *Subscription Status*\nPlan: *{tier}*\nStatus: *{state}*\nExpires: `{expiry}`\nReferral code: `{referral_code}`\n\nUse the menu below to return to Dashboard or buy VIP.",
             ],
             [
                 'key' => 'choose_menu',

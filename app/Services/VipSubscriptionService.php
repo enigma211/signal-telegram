@@ -336,8 +336,8 @@ class VipSubscriptionService
                 'expiry' => $expiry,
                 'referral_code' => $user->referral_code,
             ],
-            "📊 *وضعیت اشتراک*\nسطح: *{$tierDisplay}*\nوضعیت: *{$state}*\nانقضا: `{$expiry}`\nکد معرف: `{$user->referral_code}`",
-            "📊 *Subscription Status*\nPlan: *{$tierDisplay}*\nStatus: *{$state}*\nExpires: `{$expiry}`\nReferral code: `{$user->referral_code}`"
+            "📊 *وضعیت اشتراک*\nسطح: *{$tierDisplay}*\nوضعیت: *{$state}*\nانقضا: `{$expiry}`\nکد معرف: `{$user->referral_code}`\n\nاز منوی زیر می‌توانید به داشبورد برگردید یا خرید VIP را شروع کنید.",
+            "📊 *Subscription Status*\nPlan: *{$tierDisplay}*\nStatus: *{$state}*\nExpires: `{$expiry}`\nReferral code: `{$user->referral_code}`\n\nUse the menu below to return to Dashboard or buy VIP."
         );
     }
 

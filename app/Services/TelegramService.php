@@ -223,6 +223,10 @@ class TelegramService
         ?array $replyMarkup = null,
         string $parseMode = 'Markdown'
     ): ?Response {
+        if ($this->hasInlineKeyboard($replyMarkup)) {
+            $text = $this->stabilizeBubbleWidth($text);
+        }
+
         $payload = [
             'chat_id' => $chatId,
             'text' => $text,
@@ -243,6 +247,10 @@ class TelegramService
         ?array $replyMarkup = null,
         string $parseMode = 'Markdown'
     ): ?Response {
+        if ($this->hasInlineKeyboard($replyMarkup)) {
+            $text = $this->stabilizeBubbleWidth($text);
+        }
+
         $payload = [
             'chat_id' => $chatId,
             'message_id' => $messageId,
@@ -257,6 +265,23 @@ class TelegramService
         }
 
         return $this->request('editMessageText', $payload);
+    }
+
+    /**
+     * Keep Telegram bubble width stable across in-place menu edits.
+     * Short texts (e.g. Status) otherwise shrink the bubble compared to Dashboard.
+     */
+    protected function stabilizeBubbleWidth(string $text): string
+    {
+        $text = rtrim(preg_replace("/(?:\n|\r\n)?\x{3164}{8,}\s*$/u", '', $text) ?? $text);
+
+        // Hangul fillers are invisible but reserve horizontal space in Telegram.
+        return $text."\n".str_repeat("\u{3164}", 36);
+    }
+
+    protected function hasInlineKeyboard(?array $replyMarkup): bool
+    {
+        return $replyMarkup !== null && ! empty($replyMarkup['inline_keyboard']);
     }
 
     /**
