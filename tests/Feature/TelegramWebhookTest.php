@@ -86,9 +86,38 @@ class TelegramWebhookTest extends TestCase
             'telegram_id' => '111222333',
             'bot_language' => BotLanguage::Fa->value,
             'subscription_tier' => SubscriptionTier::Free->value,
+            'first_name' => 'Ali',
         ]);
 
         Http::assertSent(fn ($request) => str_contains($request->url(), 'FA-TEST-TOKEN/sendMessage'));
+    }
+
+    public function test_start_stores_telegram_username_and_name(): void
+    {
+        $payload = [
+            'message' => [
+                'message_id' => 4,
+                'from' => [
+                    'id' => 555666777,
+                    'is_bot' => false,
+                    'first_name' => 'Ali',
+                    'last_name' => 'Rezaei',
+                    'username' => 'ali_trader',
+                ],
+                'chat' => ['id' => 555666777, 'type' => 'private'],
+                'text' => '/start',
+            ],
+        ];
+
+        $this->postJson('/api/telegram/webhook/fa', $payload, $this->webhookHeaders())->assertOk();
+
+        $user = TelegramUser::query()->where('telegram_id', '555666777')->first();
+
+        $this->assertNotNull($user);
+        $this->assertSame('Ali', $user->first_name);
+        $this->assertSame('Rezaei', $user->last_name);
+        $this->assertSame('ali_trader', $user->username);
+        $this->assertSame('Ali Rezaei (@ali_trader)', $user->displayName());
     }
 
     public function test_start_with_referral_code_attaches_referrer(): void
@@ -115,6 +144,43 @@ class TelegramWebhookTest extends TestCase
             'telegram_id' => '444555666',
             'referred_by' => $referrer->id,
         ]);
+    }
+
+    public function test_start_syncs_bot_language_for_existing_user(): void
+    {
+        TelegramUser::query()->create([
+            'telegram_id' => '777888999',
+            'bot_language' => BotLanguage::En,
+            'subscription_tier' => SubscriptionTier::Free,
+            'referral_code' => 'OLDEN001',
+        ]);
+
+        $payload = [
+            'message' => [
+                'message_id' => 3,
+                'from' => ['id' => 777888999, 'is_bot' => false, 'first_name' => 'Reza'],
+                'chat' => ['id' => 777888999, 'type' => 'private'],
+                'text' => '/start',
+            ],
+        ];
+
+        $this->postJson('/api/telegram/webhook/fa', $payload, $this->webhookHeaders())->assertOk();
+
+        $this->assertDatabaseHas('telegram_users', [
+            'telegram_id' => '777888999',
+            'bot_language' => BotLanguage::Fa->value,
+        ]);
+
+        Http::assertSent(function ($request) {
+            if (! str_contains($request->url(), 'FA-TEST-TOKEN/sendMessage')) {
+                return false;
+            }
+
+            $body = $request->data();
+            $text = (string) ($body['text'] ?? '');
+
+            return str_contains($text, 'خوش آمدید') || str_contains($text, 'وضعیت اشتراک');
+        });
     }
 
     public function test_support_callback_starts_support_mode(): void

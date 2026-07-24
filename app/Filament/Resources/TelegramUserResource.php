@@ -37,7 +37,25 @@ class TelegramUserResource extends Resource
                         ->label('آیدی تلگرام')
                         ->required()
                         ->unique(ignoreRecord: true)
-                        ->maxLength(255),
+                        ->maxLength(255)
+                        ->helperText('شناسه عددی ثابت تلگرام (برای ارسال پیام استفاده می‌شود).'),
+                    Forms\Components\TextInput::make('first_name')
+                        ->label('نام')
+                        ->maxLength(255)
+                        ->disabled()
+                        ->dehydrated(false),
+                    Forms\Components\TextInput::make('last_name')
+                        ->label('نام خانوادگی')
+                        ->maxLength(255)
+                        ->disabled()
+                        ->dehydrated(false),
+                    Forms\Components\TextInput::make('username')
+                        ->label('یوزرنیم')
+                        ->prefix('@')
+                        ->maxLength(255)
+                        ->disabled()
+                        ->dehydrated(false)
+                        ->helperText('از تلگرام گرفته می‌شود؛ ممکن است خالی باشد یا عوض شود.'),
                     Forms\Components\Select::make('bot_language')
                         ->label('زبان ربات')
                         ->options(collect(BotLanguage::cases())->mapWithKeys(
@@ -64,7 +82,8 @@ class TelegramUserResource extends Resource
                     Forms\Components\Select::make('referred_by')
                         ->label('معرف')
                         ->relationship('referrer', 'telegram_id')
-                        ->searchable()
+                        ->getOptionLabelFromRecordUsing(fn (TelegramUser $record): string => $record->displayName().' · '.$record->telegram_id)
+                        ->searchable(['telegram_id', 'username', 'first_name', 'last_name'])
                         ->preload()
                         ->nullable(),
                     Forms\Components\TextInput::make('crypto_wallet_address')
@@ -78,11 +97,33 @@ class TelegramUserResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('display_name')
+                    ->label('کاربر')
+                    ->state(fn (TelegramUser $record): string => $record->displayName())
+                    ->description(fn (TelegramUser $record): string => 'ID: '.$record->telegram_id)
+                    ->searchable(query: function ($query, string $search): void {
+                        $query->where(function ($q) use ($search): void {
+                            $q->where('telegram_id', 'like', "%{$search}%")
+                                ->orWhere('username', 'like', "%{$search}%")
+                                ->orWhere('first_name', 'like', "%{$search}%")
+                                ->orWhere('last_name', 'like', "%{$search}%");
+                        });
+                    })
+                    ->sortable(query: function ($query, string $direction): void {
+                        $query->orderBy('first_name', $direction)->orderBy('username', $direction);
+                    }),
                 Tables\Columns\TextColumn::make('telegram_id')
                     ->label('آیدی تلگرام')
                     ->searchable()
                     ->sortable()
-                    ->copyable(),
+                    ->copyable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('username')
+                    ->label('یوزرنیم')
+                    ->formatStateUsing(fn (?string $state): string => $state ? '@'.$state : '—')
+                    ->searchable()
+                    ->copyable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('bot_language')
                     ->label('زبان')
                     ->badge()

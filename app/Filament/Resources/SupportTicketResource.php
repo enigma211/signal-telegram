@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\SupportTicketResource\Pages;
 use App\Filament\Resources\SupportTicketResource\RelationManagers\MessagesRelationManager;
 use App\Models\SupportTicket;
+use App\Models\TelegramUser;
 use App\Services\SupportService;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -49,6 +50,7 @@ class SupportTicketResource extends Resource
                     Forms\Components\Select::make('telegram_user_id')
                         ->label('کاربر')
                         ->relationship('telegramUser', 'telegram_id')
+                        ->getOptionLabelFromRecordUsing(fn (TelegramUser $record): string => $record->displayName().' · '.$record->telegram_id)
                         ->searchable()
                         ->disabled(),
                     Forms\Components\TextInput::make('subject')
@@ -76,7 +78,20 @@ class SupportTicketResource extends Resource
                 Tables\Columns\TextColumn::make('id')->label('#')->sortable(),
                 Tables\Columns\TextColumn::make('telegramUser.telegram_id')
                     ->label('کاربر')
-                    ->searchable()
+                    ->formatStateUsing(fn ($state, $record): string => $record->telegramUser
+                        ? $record->telegramUser->displayName()
+                        : (string) $state)
+                    ->description(fn ($record): ?string => $record->telegramUser
+                        ? 'ID: '.$record->telegramUser->telegram_id
+                        : null)
+                    ->searchable(query: function ($query, string $search): void {
+                        $query->whereHas('telegramUser', function ($q) use ($search): void {
+                            $q->where('telegram_id', 'like', "%{$search}%")
+                                ->orWhere('username', 'like', "%{$search}%")
+                                ->orWhere('first_name', 'like', "%{$search}%")
+                                ->orWhere('last_name', 'like', "%{$search}%");
+                        });
+                    })
                     ->copyable(),
                 Tables\Columns\TextColumn::make('telegramUser.bot_language')
                     ->label('زبان')

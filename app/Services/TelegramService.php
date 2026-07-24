@@ -63,29 +63,85 @@ class TelegramService
 
     /**
      * Silent registration on /start — creates the user and assigns a referral code.
+     *
+     * @param  array{first_name?: ?string, last_name?: ?string, username?: ?string}|null  $profile
      */
     public function registerSilently(
         string $telegramId,
         BotLanguage|string $language,
-        ?string $referralCode = null
+        ?string $referralCode = null,
+        ?array $profile = null
     ): TelegramUser {
         $botLanguage = $language instanceof BotLanguage
             ? $language
             : BotLanguage::from($language);
 
+        $profileData = $this->normalizeProfile($profile);
+
         $user = TelegramUser::query()->firstOrCreate(
             ['telegram_id' => $telegramId],
-            [
-                'bot_language' => $botLanguage,
-                'subscription_tier' => SubscriptionTier::Free,
-            ]
+            array_merge(
+                [
+                    'bot_language' => $botLanguage,
+                    'subscription_tier' => SubscriptionTier::Free,
+                ],
+                $profileData
+            )
         );
+
+        $updates = [];
+
+        if (! $user->wasRecentlyCreated && $user->bot_language !== $botLanguage) {
+            $updates['bot_language'] = $botLanguage;
+        }
+
+        if ($profileData !== []) {
+            foreach ($profileData as $key => $value) {
+                if ($user->{$key} !== $value) {
+                    $updates[$key] = $value;
+                }
+            }
+        }
+
+        if ($updates !== []) {
+            $user->update($updates);
+        }
 
         if ($user->wasRecentlyCreated && filled($referralCode)) {
             $this->attachReferrer($user, $referralCode);
         }
 
         return $user->fresh();
+    }
+
+    /**
+     * @param  array{first_name?: ?string, last_name?: ?string, username?: ?string}|null  $profile
+     * @return array{first_name?: ?string, last_name?: ?string, username?: ?string}
+     */
+    protected function normalizeProfile(?array $profile): array
+    {
+        if ($profile === null) {
+            return [];
+        }
+
+        $data = [];
+
+        if (array_key_exists('first_name', $profile)) {
+            $data['first_name'] = filled($profile['first_name']) ? trim((string) $profile['first_name']) : null;
+        }
+
+        if (array_key_exists('last_name', $profile)) {
+            $data['last_name'] = filled($profile['last_name']) ? trim((string) $profile['last_name']) : null;
+        }
+
+        if (array_key_exists('username', $profile)) {
+            $username = filled($profile['username'])
+                ? ltrim(trim((string) $profile['username']), '@')
+                : null;
+            $data['username'] = $username !== '' ? $username : null;
+        }
+
+        return $data;
     }
 
     public function attachReferrer(TelegramUser $user, string $referralCode): void

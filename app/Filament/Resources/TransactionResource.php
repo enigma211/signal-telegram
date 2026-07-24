@@ -6,6 +6,7 @@ use App\Enums\SubscriptionTier;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Filament\Resources\TransactionResource\Pages;
+use App\Models\TelegramUser;
 use App\Models\Transaction;
 use App\Services\TelegramService;
 use App\Services\VipSubscriptionService;
@@ -56,7 +57,8 @@ class TransactionResource extends Resource
                     Forms\Components\Select::make('telegram_user_id')
                         ->label('کاربر تلگرام')
                         ->relationship('telegramUser', 'telegram_id')
-                        ->searchable()
+                        ->getOptionLabelFromRecordUsing(fn (TelegramUser $record): string => $record->displayName().' · '.$record->telegram_id)
+                        ->searchable(['telegram_id', 'username', 'first_name', 'last_name'])
                         ->preload()
                         ->required(),
                     Forms\Components\TextInput::make('amount')
@@ -115,7 +117,20 @@ class TransactionResource extends Resource
                 Tables\Columns\TextColumn::make('id')->label('#')->sortable(),
                 Tables\Columns\TextColumn::make('telegramUser.telegram_id')
                     ->label('کاربر')
-                    ->searchable()
+                    ->formatStateUsing(fn ($state, $record): string => $record->telegramUser
+                        ? $record->telegramUser->displayName()
+                        : (string) $state)
+                    ->description(fn ($record): ?string => $record->telegramUser
+                        ? 'ID: '.$record->telegramUser->telegram_id
+                        : null)
+                    ->searchable(query: function ($query, string $search): void {
+                        $query->whereHas('telegramUser', function ($q) use ($search): void {
+                            $q->where('telegram_id', 'like', "%{$search}%")
+                                ->orWhere('username', 'like', "%{$search}%")
+                                ->orWhere('first_name', 'like', "%{$search}%")
+                                ->orWhere('last_name', 'like', "%{$search}%");
+                        });
+                    })
                     ->sortable(),
                 Tables\Columns\TextColumn::make('telegramUser.crypto_wallet_address')
                     ->label('ولت معرف')

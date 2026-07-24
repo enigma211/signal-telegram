@@ -18,6 +18,9 @@ class TelegramUser extends Model
 
     protected $fillable = [
         'telegram_id',
+        'first_name',
+        'last_name',
+        'username',
         'bot_language',
         'subscription_tier',
         'vip_expires_at',
@@ -71,6 +74,25 @@ class TelegramUser extends Model
     public function transactions(): HasMany
     {
         return $this->hasMany(Transaction::class);
+    }
+
+    public function displayName(): string
+    {
+        $name = trim(implode(' ', array_filter([(string) $this->first_name, (string) $this->last_name])));
+
+        if ($name !== '' && filled($this->username)) {
+            return $name.' (@'.$this->username.')';
+        }
+
+        if ($name !== '') {
+            return $name;
+        }
+
+        if (filled($this->username)) {
+            return '@'.$this->username;
+        }
+
+        return (string) $this->telegram_id;
     }
 
     public function referralInviteUrl(): string
